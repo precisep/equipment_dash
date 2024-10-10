@@ -14,8 +14,7 @@ import plotly.io as pio
 pio.templates.default = "plotly_dark"
 
 app = dash.Dash(
-    __name__,
-    requests_pathname_prefix='/dash/'
+    __name__
 )
 
 load_dotenv()
