@@ -1,2 +1,2 @@
-# equiptment_dash
+# Euiptment Dash
 Live dashboard development.
