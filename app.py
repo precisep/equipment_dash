@@ -16,7 +16,7 @@ pio.templates.default = "plotly_dark"
 app = dash.Dash(
     __name__
 )
-
+server = app.server
 load_dotenv()
 API_KEY = os.getenv('GOOGLE_API_KEY')
 SPREADSHEET_ID = os.getenv('SPREADSHEET_ID')
@@ -193,8 +193,6 @@ app.layout = html.Div([
 def update_graph(start_date, end_date):
     return create_figure(start_date, end_date)
 
-server = Flask(__name__)
-app = DispatcherMiddleware(server,{'/dash':app.server})
 
 if __name__ == '__main__':
-    run_simple('0.0.0.0', int(os.environ.get('PORT', 8050)), app, use_reloader=True, use_debugger=True)
+    app.run_server(debug=True)
