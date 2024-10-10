@@ -1,0 +1,127 @@
+body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #181818;
+    color: #E0E0E0;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.3em;
+    margin-top: 20px;
+    color: #ffffff;
+}
+.dash-date-picker-container {
+    display: flex;
+    align-items: left;     
+    width: 50%;          
+    margin-top: 20px;        
+}
+.dash-date-picker {
+    display: block;
+    margin: 0 auto; 
+    width: 60%; 
+    max-width: 300px; 
+    font-size: 0.9em; 
+    background-color: #252525;
+    color: #E0E0E0;
+    padding: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+    transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+.dash-date-picker:hover {
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.5);
+    background-color: #2A2A2A;
+}
+
+
+.dash-date-picker input {
+    background-color: #252525; 
+    color: #252525;
+    padding: 5px 10px;
+}
+
+.dash-date-picker input::placeholder {
+    color: #3d3e3e; 
+}
+
+
+#dashboard-info {
+    text-align: center;
+    font-size: 1.1em;
+    margin: 20px auto;
+    color: #B0BEC5; 
+}
+
+#alarm-graph {
+    margin: 20px auto;
+    max-width: 1100px; 
+    padding: 20px;
+    background-color: #252525;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.plotly-graph-div {
+
+    overflow: hidden;
+    background-color: #323232; 
+}
+
+input[type="text"],
+input[type="number"],
+input[type="search"] {
+    padding: 10px;
+    font-size: 1.1em;
+    background-color: #1F1F1F;
+    color: #E0E0E0;
+}
+
+button {
+    background-color: #009688;
+    color: white;
+    padding: 8px 16px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: #00796B; 
+    transform: scale(1.05);
+}
+
+.footer {
+    text-align: center;
+    padding: 10px;
+    background-color: #1F1F1F;
+    color: #B0BEC5;
+    font-size: 0.9em;
+    position: relative;
+    width: 100%;
+}
+
+.footer a {
+    color: #FF5722;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+@media screen and (max-width: 768px) {
+    #alarm-graph {
+        width: 90%;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+
+    .dash-date-picker {
+        width: 85%;
+        font-size: 0.9em;
+    }
+}
