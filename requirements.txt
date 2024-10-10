@@ -4,3 +4,4 @@ python-dotenv==1.0.1
 Werkzeug==3.0.4
 Flask==3.0.3
 google-api-python-client==2.2.0
+gunicorn
