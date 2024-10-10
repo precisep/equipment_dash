@@ -1,28 +1,27 @@
 import pandas as pd
 import plotly.graph_objects as go
 
-def create_figure(df,start_date, end_date):
-    print(df.head())
+def create_figure(start_date, end_date):
     mask = (df['TSLast'] >= start_date) & (df['TSLast'] <= end_date)
     filtered_df = df[mask]
-    alarm_downtime_totals = filtered_df.groupby('Unit Alarm Occurance')['Time Differences minutes'].sum().reset_index()
-    alarm_downtime_totals = alarm_downtime_totals.sort_values('Time Differences minutes', ascending=False)
-    filtered_df['Unit Alarm Occurance'] = pd.Categorical(filtered_df['Unit Alarm Occurance'], categories=alarm_downtime_totals['Unit Alarm Occurance'], ordered=True)
-    filtered_df = filtered_df.sort_values('Unit Alarm Occurance', ascending=False)
+    alarm_downtime_totals = filtered_df.groupby('Alarm')['Time_Difference_minutes'].sum().reset_index()
+    alarm_downtime_totals = alarm_downtime_totals.sort_values('Time_Difference_minutes', ascending=False)
+    filtered_df['Alarm'] = pd.Categorical(filtered_df['Alarm'], categories=alarm_downtime_totals['Alarm'], ordered=True)
+    filtered_df = filtered_df.sort_values('Alarm', ascending=False)
     filtered_df['TSLast'] = pd.to_datetime(filtered_df['TSLast'])
     time_range = pd.date_range(start=start_date, end=end_date, freq='h')
-    alarms = filtered_df['Unit Alarm Occurance'].unique()
+    alarms = filtered_df['Alarm'].unique()
     fig = go.Figure()
 
     bar_width = 0.65
 
     for alarm in alarms:
-        alarm_data = filtered_df[filtered_df['Unit Alarm Occurance'] == alarm]
+        alarm_data = filtered_df[filtered_df['Alarm'] == alarm]
         last_time = pd.Timestamp(start_date)
 
         for hour in time_range:
             downtime_segment = alarm_data[(alarm_data['TSLast'] >= last_time) & (alarm_data['TSLast'] < hour)]
-            downtime_total = downtime_segment['Time Differences minutes'].sum()
+            downtime_total = downtime_segment['Time_Difference_minutes'].sum()
 
             if downtime_total > 0:
                 if (hour - last_time).total_seconds() / 60 > 0:
@@ -80,8 +79,8 @@ def create_figure(df,start_date, end_date):
             title_font_size=12
         ),
         yaxis=dict(tickfont=dict(size=10)),
-        plot_bgcolor='#36454F',
-        paper_bgcolor='#36454F',
+       # plot_bgcolor='#36454F',
+       # paper_bgcolor='#36454F',
         font=dict(color='white')
     )
 
