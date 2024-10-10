@@ -198,4 +198,4 @@ server = Flask(__name__)
 app = DispatcherMiddleware(server,{'/dash':app.server})
 
 if __name__ == '__main__':
-    run_simple('0.0.0.0',8050,app, use_reloader=True,use_debugger=True)
+    run_simple('0.0.0.0', int(os.environ.get('PORT', 8050)), app, use_reloader=True, use_debugger=True)
