@@ -10,7 +10,7 @@ from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.serving import run_simple
 from dotenv import load_dotenv
 import plotly.io as pio
-from data.figure_creator import create_figure
+
 
 pio.templates.default = "plotly_dark"
 
