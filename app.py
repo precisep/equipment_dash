@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from flask import Flask
 from dotenv import load_dotenv
 import plotly.io as pio
+import time
 
 
 pio.templates.default = "plotly_dark"
@@ -59,6 +60,8 @@ df['Alarm'] = df['Unit Alarm Occurance']
 df = df[['TSLast', 'TSActive', 'Alarm', 'Time_Difference_minutes']]
 
 def create_figure(start_date, end_date):
+    time.sleep(5)
+    
     mask = (df['TSLast'] >= start_date) & (df['TSLast'] <= end_date)
     filtered_df = df[mask]
     alarm_downtime_totals = filtered_df.groupby('Alarm')['Time_Difference_minutes'].sum().reset_index()
@@ -159,10 +162,6 @@ app.layout = html.Div([
         ),
         style={'textAlign': 'Center', 'margin': '20px 0'}
     ),
-     html.Div(
-        html.Button('Fetch Data', id='fetch-button', n_clicks=0, className='fetch-button'),
-        style={'textAlign': 'center'}
-    ),
     dcc.Loading(
         id="loading-spinner",
         type="circle",  
@@ -177,13 +176,9 @@ app.layout = html.Div([
     Output('alarm-graph', 'figure'),
     Input('date-picker-range', 'start_date'),
     Input('date-picker-range', 'end_date'),
-    Input('fetch-button', 'n_clicks')
 )
 def update_graph(start_date, end_date):
-    if n_clicks > 0:  
-        return create_figure(start_date, end_date)
-    else:
-        return go.Figure()
+    return create_figure(start_date, end_date)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
