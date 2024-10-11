@@ -6,17 +6,13 @@ import plotly.graph_objects as go
 from googleapiclient.discovery import build
 from datetime import datetime, timedelta
 from flask import Flask
-from werkzeug.middleware.dispatcher import DispatcherMiddleware
-from werkzeug.serving import run_simple
 from dotenv import load_dotenv
 import plotly.io as pio
 
 
 pio.templates.default = "plotly_dark"
 
-app = dash.Dash(
-    __name__
-)
+app = dash.Dash(__name__)
 server = app.server
 load_dotenv()
 API_KEY = os.getenv('GOOGLE_API_KEY')
@@ -140,37 +136,18 @@ def create_figure(start_date, end_date):
             title_font_size=12
         ),
         yaxis=dict(tickfont=dict(size=10)),
-       # plot_bgcolor='#36454F',
-       # paper_bgcolor='#36454F',
         font=dict(color='white')
     )
 
-  
-    fig.add_trace(go.Bar(
-        name='Good State',
-        marker_color='lightgreen',
-        hovertemplate='Type: Good State<extra></extra>',
-        showlegend=True,
-        visible='legendonly'
-    ))
-
-    fig.add_trace(go.Bar(
-        name='Active Alarm',
-        marker_color='red',
-        hovertemplate='Type: Active Alarm<extra></extra>',
-        showlegend=True,
-        visible='legendonly'
-    ))
-
     return fig
-    
+
 yesterday = (datetime.now() - timedelta(days=1)).date()
 
 app.layout = html.Div([
     html.Link(rel='stylesheet', href='/assets/styles.css'),
     html.H1("Aluecor Equipment Dashboard"),
     html.Div(id='dashboard-info', children=[
-        "This dashboard presents the plant equipment data for the various sections of the  plant i.e alarms, press cycles, and the aging oven."
+        "This dashboard presents the plant equipment data for the various sections of the plant i.e alarms, press cycles, and the aging oven."
     ]),
     html.Div(
         dcc.DatePickerRange(
@@ -180,11 +157,19 @@ app.layout = html.Div([
             display_format='YYYY-MM-DD',
             className='dash-date-picker'
         ),
-        style={'textAlign': 'Center', 'margin': '20px 0'} 
+        style={'textAlign': 'Center', 'margin': '20px 0'}
     ),
-    dcc.Graph(id='alarm-graph'),
+    
+   
+    dcc.Loading(
+        id="loading-spinner",
+        type="circle",  
+        children=[
+            dcc.Graph(id='alarm-graph')
+        ],
+        fullscreen=False  
+    )
 ])
-
 
 @app.callback(
     Output('alarm-graph', 'figure'),
@@ -193,7 +178,6 @@ app.layout = html.Div([
 )
 def update_graph(start_date, end_date):
     return create_figure(start_date, end_date)
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
