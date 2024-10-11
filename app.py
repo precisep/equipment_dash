@@ -168,7 +168,7 @@ app.layout = html.Div([
         children=[
             dcc.Graph(id='alarm-graph')
         ],
-        fullscreen=True  
+        fullscreen=False  
     )
 ])
 
