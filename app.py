@@ -159,8 +159,10 @@ app.layout = html.Div([
         ),
         style={'textAlign': 'Center', 'margin': '20px 0'}
     ),
-    
-   
+     html.Div(
+        html.Button('Fetch Data', id='fetch-button', n_clicks=0, className='fetch-button'),
+        style={'textAlign': 'center'}
+    ),
     dcc.Loading(
         id="loading-spinner",
         type="circle",  
@@ -174,10 +176,14 @@ app.layout = html.Div([
 @app.callback(
     Output('alarm-graph', 'figure'),
     Input('date-picker-range', 'start_date'),
-    Input('date-picker-range', 'end_date')
+    Input('date-picker-range', 'end_date'),
+    Input('fetch-button', 'n_clicks')
 )
 def update_graph(start_date, end_date):
-    return create_figure(start_date, end_date)
+    if n_clicks > 0:  
+        return create_figure(start_date, end_date)
+    else:
+        return go.Figure()
 
 if __name__ == '__main__':
     app.run_server(debug=True)
