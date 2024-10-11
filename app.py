@@ -60,7 +60,7 @@ df['Alarm'] = df['Unit Alarm Occurance']
 df = df[['TSLast', 'TSActive', 'Alarm', 'Time_Difference_minutes']]
 
 def create_figure(start_date, end_date):
-    time.sleep(5)
+    time.sleep(3)
     
     mask = (df['TSLast'] >= start_date) & (df['TSLast'] <= end_date)
     filtered_df = df[mask]
@@ -168,7 +168,7 @@ app.layout = html.Div([
         children=[
             dcc.Graph(id='alarm-graph')
         ],
-        fullscreen=False  
+        fullscreen=True  
     )
 ])
 
