@@ -172,8 +172,12 @@ def create_figure(selected_date):
     start_date = f"{selected_date} 07:00:00"
     end_date = f"{selected_date} 17:00:00"
     
+   
+    start_date_filter = pd.to_datetime(start_date)
+    end_date_filter = pd.to_datetime(end_date)
+
     
-    mask = (df['TSLast'] >= start_date) & (df['TSLast'] < end_date)
+    mask = (df['TSLast'] >= start_date_filter) & (df['TSLast'] < end_date_filter)
     filtered_df = df[mask]
 
     filtered_df['Equipment Group'] = filtered_df['Alarm'].apply(lambda alarm: map_to_equipment_group(alarm, equipment_grouping))
@@ -197,7 +201,6 @@ def create_figure(selected_date):
         last_time = pd.Timestamp(start_date)
 
         for hour in time_range:
-            
             active_alarms = alarm_data[(alarm_data['TSLast'] >= last_time) & (alarm_data['TSLast'] < hour)]
             downtime_total = active_alarms['Time_Difference_minutes'].sum()
             alarms_list = active_alarms['Alarm'].unique()
@@ -206,7 +209,11 @@ def create_figure(selected_date):
                 if (hour - last_time).total_seconds() / 60 > 0:
                     active_time = (hour - last_time).total_seconds() / 60 - downtime_total
                     start_time = active_alarms['TSActive'].iloc[0] if not active_alarms.empty else last_time
-                    alarms_hover = "<br>".join(alarms_list)  
+
+                    
+                    start_time_in_minutes = (start_time - pd.Timestamp(start_time.date())).total_seconds() / 60
+                    
+                    alarms_hover = "<br>".join(alarms_list)
 
                     fig.add_trace(go.Bar(
                         y=[equipment_group],
@@ -216,7 +223,7 @@ def create_figure(selected_date):
                         name='Good State',
                         marker_color='lightgreen',
                         base=last_time.hour * 60 + last_time.minute,
-                        hovertemplate=f'Start Time: {start_time} <br>Equipment: {equipment_group} Type: Good State<br>Duration: {minutes_to_hhmm(round(active_time, 2))}<extra></extra>',
+                        hovertemplate=f'Start Time: {start_time.strftime("%Y-%m-%d %H:%M")} <br>Equipment: {equipment_group} Type: Good State<br>Duration: {minutes_to_hhmm(round(active_time, 2))}<extra></extra>',
                         showlegend=False
                     ))
 
@@ -228,10 +235,11 @@ def create_figure(selected_date):
                         name='Active Alarm',
                         marker_color='red',
                         base=last_time.hour * 60 + last_time.minute + active_time,
-                        hovertemplate=f'Start Time: {start_time} <br>Equipment: {equipment_group} <br>Alarms: {alarms_hover}<br>Type: Active Alarm<br>Duration: {minutes_to_hhmm(round(downtime_total, 2))}<extra></extra>',
+                        hovertemplate=f'Start Time: {start_time.strftime("%Y-%m-%d %H:%M")} <br>Equipment: {equipment_group} <br>Alarms: {alarms_hover}<br>Type: Active Alarm<br>Duration: {minutes_to_hhmm(round(downtime_total, 2))}<extra></extra>',
                         showlegend=False
                     ))
                 last_time = hour
+
 
         if last_time < time_range[-1]:
             remaining_time = (time_range[-1] - last_time).total_seconds() / 60
@@ -248,13 +256,13 @@ def create_figure(selected_date):
             ))
 
         
-    date_min = df['TSLast'].min().replace(hour=7, minute=0, second=0)
-    date_max = df['TSLast'].max().replace(hour=17, minute=0, second=0)
+    date_min = filtered_df['TSLast'].min().replace(hour=7, minute=0, second=0)
+    date_max = filtered_df['TSLast'].max().replace(hour=17, minute=0, second=0)
 
     
     fig.update_layout(
         title="Active Alarm and Good State Duration by Alarm and Equipment Group",
-        xaxis_title="Time (Minutes)",
+        xaxis_title="Timstamp",
         yaxis_title="Equipment Group and Alarm",
         barmode='stack',
         height=2000,
