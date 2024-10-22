@@ -52,6 +52,8 @@ except Exception as e:
 df = df_data_source[['TSLast', 'TSActive', 'Unit Alarm Occurance']].copy()
 df['TSLast'] = pd.to_datetime(df['TSLast'], errors='coerce')
 df['TSActive'] = pd.to_datetime(df['TSActive'], errors='coerce')
+df['TSLast'] = pd.to_datetime(df['TSLast'] + timedelta(hours=2))
+df['TSActive'] = pd.to_datetime(df['TSActive'] + timedelta(hours=2))
 invalid_rows = df[df['TSLast'].isna() | df['TSActive'].isna()]
 if not invalid_rows.empty:
     print("Invalid datetime rows found:", invalid_rows)
@@ -59,84 +61,208 @@ df['Time_Difference_minutes'] = (df['TSLast'] - df['TSActive']).dt.total_seconds
 df['Alarm'] = df['Unit Alarm Occurance']
 df = df[['TSLast', 'TSActive', 'Alarm', 'Time_Difference_minutes']]
 
-def create_figure(start_date, end_date):
-    time.sleep(3)
+equipment_grouping = {
+    'Press': ['HMI - PRESS ON HOLD'],
+    'Cooling Fans': [
+        'I22 - PULLER - COOLING FAN 1 - MPU',
+        'I23 - PULLER - COOLING FAN 2 - MPU',
+        'I24 - PULLER - COOLING FAN 3 - MPU',
+        'I25 - PULLER - COOLING FAN 4 - MPU',
+        'I26 - PULLER - COOLING FAN 5 - MPU',
+        'I27 - PULLER - COOLING FAN 6 - MPU',
+        'I28 - PULLER - COOLING FAN 7 - MPU',
+        'I29 - PULLER - COOLING FAN 8 - MPU',
+        'I30 - PULLER - COOLING FAN 9 - MPU',
+        'I31 - PULLER - COOLING FAN 10 - MPU',
+        'I32 - PULLER - COOLING FAN 11 - MPU'
+    ],
+    'Gas Oven Burners': [
+        'I43 - GAS OVEN - BURNER 1 FAULT',
+        'I44 - GAS OVEN - BURNER 2 FAULT',
+        'I45 - GAS OVEN - BURNER 3 FAULT',
+        'I46 - GAS OVEN - BURNER 4 FAULT',
+        'I47 - GAS OVEN - BURNER 5 FAULT',
+        'I48 - GAS OVEN - BURNER 6 FAULT',
+        'I49 - GAS OVEN - BURNER 7 FAULT',
+        'I50 - GAS OVEN - BURNER 8 FAULT',
+        'I51 - GAS OVEN - BURNER 9 FAULT',
+        'I52 - GAS OVEN - BURNER 10 FAULT'
+    ],
+    'Pumps': [
+        'I03 - BOTTOM OIL CIRCULATION PUMP - MPU',
+        'I13 - COOLING TOWER - WATER TOWER 2 PUMP - MPU',
+        'I14 - COOLING TOWER - SMALL BLUE MIDDLE PUMP - MPU',
+        'I15 - COOLING TOWER - BIG WATER PUMP - MPU',
+        'I100 - MAIN PUMP 2 - MPU',
+        'I102 - MAIN PUMP 1 - MPU'
+    ],
+    'Puller System': [
+        'PULLER ENCODER COMS DOWN',
+        'PULLER DRIVE COMS DOWN',
+        'PULLER PANEL IO COMS DOWN',
+        'I04 - PULLER - PLATEN SAW - MPU',
+        'I18 - PULLER - HYDRAULIC POWER PACK SMALL ORANGE MOTOR FOR SLAT TABLE - MPU',
+        'I53 - PULLER - SAFETY GATE PAUSE REVERSE',
+        '9400 - PULLER DRIVE FAULT',
+        'I33 - PULLER - EXTRACTION FAN 1 - MPU',
+        'I34 - PULLER - EXTRACTION FAN 2 - MPU',
+        'I35 - PULLER - EXTRACTION FAN 3 - MPU'
+    ],
+    'Safety Systems': [
+        'I191 - PRESS - SAFETY FAULT ( E-STOP / PULL ROPE)',
+        'I192 - PROFILE CUTTER - E-STOP FAULT',
+        'SAFETIES NOT HEALTHY - RESET FAULTS',
+        'MAIN PANEL IO COMS DOWN',
+        'I38 - MAIN DESK E-STOP',
+        'I105 - BILLET CUTTER - ELEVATOR E-STOP'
+    ],
+    'Induction Heater': [
+        'I109 - INDUCTION HEATER TRANSFORMER OVER TEMPERATURE',
+        'I107 - INDUCTION HEATER THERMISTOR OVER TEMPERATURE - ON'
+    ],
+    'Transfer System': [
+        'I05 - TRANSFER - BILLET TROLLEY - MPU',
+        'I07 - TRANSFER - INDUCTION HEATER EXIT ROLLS - MPU',
+        'I08 - TRANSFER - GAS OVEN ENTRY ROLLS - MPU',
+        'I09 - TRANSFER - GAS OVEN EXIT ROLLS - MPU',
+        'I10 - TRANSFER - BILLET ELEVATOR - MPU'
+    ],
+    'Miscellaneous': [
+        '0',
+        'BILLET PLC INTERCOMS DOWN',
+        'I01 - PROFILE CUTTER - SAW - MPU',
+        'I02 - Spare - MPU',
+        'I11 - PROFILE CUTTER - MPU - OUTFEED TABLE BELT',
+        'I12 - PROFILE CUTTER - MPU - HYDRAULIC MOTOR',
+        'I16 - PROFILE CUTTER - MPU - INFEED ROLLER 1',
+        'I17 - PROFILE CUTTER - MPU - INFEED ROLLER 2',
+        'I19 - STRETCHER - HYDRAULIC BIG ORANGE MOTOR BIG - MPU',
+        'I20 - Spare - MPU',
+        'I36 - BLOWER MOTOR - MPU',
+        'I37 - CONTAINER SEAL PUMP - MPU',
+        'I79 - ONE OF THE OIL SUPPLY HAND VALVE 1,2,3 ARE NOT FULLY OPEN',
+        'CONTAINER ELEMENT PHASE 1 UNDER CURRENT',
+        'CONTAINER ELEMENT PHASE 2 UNDER CURRENT',
+        'CONTAINER ELEMENT PHASE 3 UNDER CURRENT'
+    ]}
+
+
+def map_to_equipment_group(alarm, equipment_grouping):
+    for equipment, alarms in equipment_grouping.items():
+        if alarm in alarms:
+            return equipment
+    return 'Unknown'
+
+
+def minutes_to_hhmm(minutes):
+    hours = int(minutes // 60)
+    mins = int(minutes % 60)
+ 
+
+    if hours > 0 and mins > 0:
+        return f'{hours} hour{"s" if hours > 1 else ""} {mins} minute{"s" if mins > 1 else ""}'
+    elif hours > 0:
+        return f'{hours} hour{"s" if hours > 1 else ""}'
+    else:
+        return f'{mins} minute{"s" if mins > 1 else ""}'
+
+
+
+def create_figure(selected_date):
+    start_date = f"{selected_date} 07:00:00"
+    end_date = f"{selected_date} 17:00:00"
     
-    mask = (df['TSLast'] >= start_date) & (df['TSLast'] <= end_date)
+    
+    mask = (df['TSLast'] >= start_date) & (df['TSLast'] < end_date)
     filtered_df = df[mask]
-    alarm_downtime_totals = filtered_df.groupby('Alarm')['Time_Difference_minutes'].sum().reset_index()
+
+    filtered_df['Equipment Group'] = filtered_df['Alarm'].apply(lambda alarm: map_to_equipment_group(alarm, equipment_grouping))
+
+    alarm_downtime_totals = filtered_df.groupby(['Equipment Group'])['Time_Difference_minutes'].sum().reset_index()
+
     alarm_downtime_totals = alarm_downtime_totals.sort_values('Time_Difference_minutes', ascending=False)
-    filtered_df['Alarm'] = pd.Categorical(filtered_df['Alarm'], categories=alarm_downtime_totals['Alarm'], ordered=True)
-    filtered_df = filtered_df.sort_values('Alarm', ascending=False)
+    filtered_df['Equipment Group'] = pd.Categorical(filtered_df['Equipment Group'], categories=alarm_downtime_totals['Equipment Group'], ordered=True)
+    filtered_df = filtered_df.sort_values('Equipment Group', ascending=False)
     filtered_df['TSLast'] = pd.to_datetime(filtered_df['TSLast'])
     time_range = pd.date_range(start=start_date, end=end_date, freq='h')
-    alarms = filtered_df['Alarm'].unique()
+
+    alarm_group = filtered_df['Equipment Group'].unique()
+
     fig = go.Figure()
 
-    bar_width = 0.65
+    bar_width = 0.25
 
-    for alarm in alarms:
-        alarm_data = filtered_df[filtered_df['Alarm'] == alarm]
+    for equipment_group in alarm_group:
+        alarm_data = filtered_df[filtered_df['Equipment Group'] == equipment_group]
         last_time = pd.Timestamp(start_date)
 
         for hour in time_range:
-            downtime_segment = alarm_data[(alarm_data['TSLast'] >= last_time) & (alarm_data['TSLast'] < hour)]
-            downtime_total = downtime_segment['Time_Difference_minutes'].sum()
+            
+            active_alarms = alarm_data[(alarm_data['TSLast'] >= last_time) & (alarm_data['TSLast'] < hour)]
+            downtime_total = active_alarms['Time_Difference_minutes'].sum()
+            alarms_list = active_alarms['Alarm'].unique()
 
             if downtime_total > 0:
                 if (hour - last_time).total_seconds() / 60 > 0:
                     active_time = (hour - last_time).total_seconds() / 60 - downtime_total
-                    start_time = downtime_segment['TSActive'].iloc[0] if not downtime_segment.empty else last_time
+                    start_time = active_alarms['TSActive'].iloc[0] if not active_alarms.empty else last_time
+                    alarms_hover = "<br>".join(alarms_list)  
+
                     fig.add_trace(go.Bar(
-                        y=[alarm],
+                        y=[equipment_group],
                         x=[active_time],
                         width=bar_width,
                         orientation='h',
                         name='Good State',
                         marker_color='lightgreen',
                         base=last_time.hour * 60 + last_time.minute,
-                        hovertemplate=f'Start Time: {start_time} <br>Alarm:  {alarm}  <br>Type: Good State<br>Duration: {round(active_time, 2)}minutes<extra></extra>',
-                        showlegend=False  
+                        hovertemplate=f'Start Time: {start_time} <br>Equipment: {equipment_group} Type: Good State<br>Duration: {minutes_to_hhmm(round(active_time, 2))}<extra></extra>',
+                        showlegend=False
                     ))
+
                     fig.add_trace(go.Bar(
-                        y=[alarm],
+                        y=[equipment_group],
                         x=[downtime_total],
                         width=bar_width,
                         orientation='h',
                         name='Active Alarm',
                         marker_color='red',
                         base=last_time.hour * 60 + last_time.minute + active_time,
-                        hovertemplate=f'Start Time: {start_time} <br>Alarm: {alarm}<br>Type: Active Alarm<br>Duration: {round(downtime_total, 2)} minutes<extra></extra>',
-                        showlegend=False  
+                        hovertemplate=f'Start Time: {start_time} <br>Equipment: {equipment_group} <br>Alarms: {alarms_hover}<br>Type: Active Alarm<br>Duration: {minutes_to_hhmm(round(downtime_total, 2))}<extra></extra>',
+                        showlegend=False
                     ))
                 last_time = hour
 
         if last_time < time_range[-1]:
             remaining_time = (time_range[-1] - last_time).total_seconds() / 60
             fig.add_trace(go.Bar(
-                y=[alarm],
+                y=[equipment_group],
                 x=[remaining_time],
                 width=bar_width,
                 orientation='h',
                 name='Good State',
                 marker_color='lightgreen',
                 base=last_time.hour * 60 + last_time.minute,
-                hovertemplate='Alarm: ' + alarm + '<br>Type: Good State<br>Duration: ' + str(round(remaining_time, 2)) + ' minutes<extra></extra>',
-                showlegend= False
+                hovertemplate=f'Equipment: {equipment_group} <br>Alarms: None<br>Type: Good State<br>Duration: {minutes_to_hhmm(round(remaining_time, 2))}<extra></extra>',
+                showlegend=False
             ))
 
+        
+    date_min = df['TSLast'].min().replace(hour=7, minute=0, second=0)
+    date_max = df['TSLast'].max().replace(hour=17, minute=0, second=0)
+
+    
     fig.update_layout(
-        title="Active Alarm and Good State Duration by Alarm",
-        xaxis_title="Time (Hours)",
-        yaxis_title="Alarm",
+        title="Active Alarm and Good State Duration by Alarm and Equipment Group",
+        xaxis_title="Time (Minutes)",
+        yaxis_title="Equipment Group and Alarm",
         barmode='stack',
         height=2000,
         xaxis=dict(
             tickmode='array',
             tickvals=[(hour.hour * 60) for hour in time_range],
             ticktext=[hour.strftime('%Y-%m-%d %H:%M') for hour in time_range],
-            showgrid=True,
-            title_font_size=12
+            showgrid=True
         ),
         yaxis=dict(tickfont=dict(size=10)),
         font=dict(color='white')
@@ -144,22 +270,24 @@ def create_figure(start_date, end_date):
 
     return fig
 
+
+
+
 yesterday = (datetime.now() - timedelta(days=1)).date()
 
 app.layout = html.Div([
     html.Link(rel='stylesheet', href='/assets/styles.css'),
     html.H1("Aluecor Equipment Dashboard"),
     html.Div(id='dashboard-info', children=[
-        "This dashboard presents the plant equipment data for the various sections of the plant i.e alarms, press cycles, and the aging oven."
+        "This dashboard presents the alarms data for the plant equipment."
     ]),
     html.Div(
-        dcc.DatePickerRange(
-            id='date-picker-range',
-            start_date=yesterday,
-            end_date=yesterday,
-            display_format='YYYY-MM-DD',
-            className='dash-date-picker'
-        ),
+        dcc.DatePickerSingle(
+        id='date-picker',
+        date=yesterday,
+        display_format='YYYY-MM-DD',
+        style={'margin': '20px'}
+    ),
         style={'textAlign': 'Center', 'margin': '20px 0'}
     ),
     dcc.Loading(
@@ -168,17 +296,19 @@ app.layout = html.Div([
         children=[
             dcc.Graph(id='alarm-graph')
         ],
-        fullscreen=False  
+        fullscreen=True  
     )
 ])
 
 @app.callback(
     Output('alarm-graph', 'figure'),
-    Input('date-picker-range', 'start_date'),
-    Input('date-picker-range', 'end_date'),
+    [Input('date-picker', 'date')]
 )
-def update_graph(start_date, end_date):
-    return create_figure(start_date, end_date)
+def update_graph(selected_date):
+    if selected_date is not None:
+        fig = create_figure(selected_date)
+        return fig
+    return go.Figure()
 
 if __name__ == '__main__':
     app.run_server(debug=True)
