@@ -180,7 +180,7 @@ def create_figure(selected_date):
     mask = (df['TSLast'] >= start_date_filter) & (df['TSLast'] < end_date_filter)
     filtered_df = df[mask]
 
-    filtered_df['Equipment Group'] = filtered_df['Alarm'].apply(lambda alarm: map_to_equipment_group(alarm, equipment_grouping))
+    filtered_df['Equipment Group'] = filtered_df['Alarm'].apply(lambda alarm: map_to_equipment_group(alarm, equipment_grouping)).dropna()
 
     alarm_downtime_totals = filtered_df.groupby(['Equipment Group'])['Time_Difference_minutes'].sum().reset_index()
 
