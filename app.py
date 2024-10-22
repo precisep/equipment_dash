@@ -265,7 +265,7 @@ def create_figure(selected_date):
         xaxis_title="Timstamp",
         yaxis_title="Equipment Group and Alarm",
         barmode='stack',
-        height=2000,
+        height=750,
         xaxis=dict(
             tickmode='array',
             tickvals=[(hour.hour * 60) for hour in time_range],
