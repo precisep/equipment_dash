@@ -227,6 +227,9 @@ def create_figure(selected_date):
                         showlegend=False
                     ))
 
+                    alarm_start_time_in_minutes = last_time.hour * 60 + last_time.minute + active_time
+                    alarm_start_time = last_time + pd.to_timedelta(active_time, unit='m')  
+                 
                     fig.add_trace(go.Bar(
                         y=[equipment_group],
                         x=[downtime_total],
@@ -235,7 +238,7 @@ def create_figure(selected_date):
                         name='Active Alarm',
                         marker_color='red',
                         base=last_time.hour * 60 + last_time.minute + active_time,
-                        hovertemplate=f'Start Time: {start_time.strftime("%Y-%m-%d %H:%M")} <br>Equipment: {equipment_group} <br>Alarms: {alarms_hover}<br>Type: Active Alarm<br>Duration: {minutes_to_hhmm(round(downtime_total, 2))}<extra></extra>',
+                        hovertemplate=f'Start Time: {alarm_start_time.strftime("%Y-%m-%d %H:%M")} <br>Equipment: {equipment_group} <br>Alarms: {alarms_hover}<br>Type: Active Alarm<br>Duration: {minutes_to_hhmm(round(downtime_total, 2))}<extra></extra>',
                         showlegend=False
                     ))
                 last_time = hour
@@ -265,7 +268,7 @@ def create_figure(selected_date):
         xaxis_title="Timstamp",
         yaxis_title="Equipment Group and Alarm",
         barmode='stack',
-        height=750,
+        height=2000,
         xaxis=dict(
             tickmode='array',
             tickvals=[(hour.hour * 60) for hour in time_range],
