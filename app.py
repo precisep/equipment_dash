@@ -105,6 +105,8 @@ def parse_frappe_api(selected_date):
     print(f'Records for selected date {df.shape}')
     if df.empty:
         return "No data found for the selected date range."
+
+    print(df.head)
     
     return df.drop_duplicates()
 
