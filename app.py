@@ -163,7 +163,7 @@ def create_figure(selected_date,df):
     end_date_filter = pd.to_datetime(end_date)
 
     
-    mask = (df['TSLast'] >= start_date_filter) & (df['TSLast'] < end_date_filter)
+    mask = (df['tslast'] >= start_date_filter) & (df['tslast'] < end_date_filter)
     filtered_df = df[mask]
 
     filtered_df['Equipment Group'] = filtered_df['Alarm'].apply(lambda alarm: map_to_equipment_group(alarm, equipment_grouping)).dropna()
@@ -173,7 +173,7 @@ def create_figure(selected_date,df):
     alarm_downtime_totals = alarm_downtime_totals.sort_values('Time_Difference_minutes', ascending=False)
     filtered_df['Equipment Group'] = pd.Categorical(filtered_df['Equipment Group'], categories=alarm_downtime_totals['Equipment Group'], ordered=True)
     filtered_df = filtered_df.sort_values('Equipment Group', ascending=False)
-    filtered_df['TSLast'] = pd.to_datetime(filtered_df['TSLast'])
+    filtered_df['tslast'] = pd.to_datetime(filtered_df['tslast'])
     time_range = pd.date_range(start=start_date, end=end_date, freq='h')
 
     alarm_group = filtered_df['Equipment Group'].unique()
@@ -187,14 +187,14 @@ def create_figure(selected_date,df):
         last_time = pd.Timestamp(start_date)
 
         for hour in time_range:
-            active_alarms = alarm_data[(alarm_data['TSLast'] >= last_time) & (alarm_data['TSLast'] < hour)]
-            downtime_total = active_alarms['Time_Difference_minutes'].sum()
-            alarms_list = active_alarms['Alarm'].unique()
+            active_alarms = alarm_data[(alarm_data['tslast'] >= last_time) & (alarm_data['tslast'] < hour)]
+            downtime_total = active_alarms['time_difference_minutes'].sum()
+            alarms_list = active_alarms['alarm'].unique()
 
             if downtime_total > 0:
                 if (hour - last_time).total_seconds() / 60 > 0:
                     active_time = (hour - last_time).total_seconds() / 60 - downtime_total
-                    start_time = active_alarms['TSActive'].iloc[0] if not active_alarms.empty else last_time
+                    start_time = active_alarms['tsactive'].iloc[0] if not active_alarms.empty else last_time
 
                     
                     start_time_in_minutes = (start_time - pd.Timestamp(start_time.date())).total_seconds() / 60
@@ -242,8 +242,8 @@ def create_figure(selected_date,df):
             ))
 
         
-    date_min = filtered_df['TSLast'].min().replace(hour=7, minute=0, second=0)
-    date_max = filtered_df['TSLast'].max().replace(hour=17, minute=0, second=0)
+    date_min = filtered_df['tslast'].min().replace(hour=7, minute=0, second=0)
+    date_max = filtered_df['tslast'].max().replace(hour=17, minute=0, second=0)
 
     
     fig.update_layout(
