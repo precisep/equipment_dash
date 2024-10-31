@@ -2,14 +2,8 @@ import os
 import pandas as pd
 import dash
 from dash import Dash, dcc, html, Input, Output
-from concurrent.futures import ThreadPoolExecutor  
-import plotly.graph_objects as go
 import requests
-import plotly.io as pio
 from dotenv import load_dotenv
-
-# Set the default Plotly template
-pio.templates.default = "plotly_dark"
 
 # Initialize Dash app
 app = Dash(__name__)
@@ -19,7 +13,6 @@ load_dotenv()
 # Environment variables for API
 api_url = os.getenv('API_URL')
 authorization_token = os.getenv('AUTHORIZATION_TOKEN')
-session = requests.Session()
 
 # Headers for API requests
 headers = {
@@ -33,40 +26,25 @@ app.layout = html.Div(
     className='app-container',
     children=[
         html.H1("Aluecor Alarms Dashboard", className='app-heading'),
-
-        dcc.Loading(
-            id="loading-spinner-generate",
-            type="circle",
-            children=[
-                html.Button('Fetch Data', id='fetch-data-btn', n_clicks=0),
-                html.Div(id='loading-status')
-            ],
-            fullscreen=False
-        ),
-
+        html.Button('Fetch Data', id='fetch-data-btn', n_clicks=0),
+        html.Div(id='loading-status'),
         dcc.Loading(
             id='loading-graphs',
             type='circle',
             children=[
-                html.Div(
-                    id='output-data',
-                    style={'display': 'flex', 'flex-direction': 'column'}
-                ),
+                html.Div(id='output-data', style={'display': 'flex', 'flex-direction': 'column'})
             ]
         ),
     ]
 )
 
-# Function to fetch data from API without date filtering
+# Function to fetch data from API
 def fetch_data():
     try:
         filter_query = '?fields=["tslast","tsactive","alarm","time_difference_minutes"]&limit=200000'
-        
         response = requests.get(f'{api_url}{filter_query}', headers=headers)
         response.raise_for_status()
-        
         return response.json().get('data', [])
-    
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data: {str(e)}")
         return []
@@ -78,7 +56,6 @@ def parse_frappe_api():
     print(f'Records fetched: {df.shape[0]}')  # Print number of records found
     if df.empty:
         return "No data found."
-
     return df.drop_duplicates()
 
 @app.callback(
@@ -90,7 +67,7 @@ def update_data(n_clicks):
         df_alarms = parse_frappe_api()
         if isinstance(df_alarms, str): 
             return html.Div([html.P(df_alarms)])
-
+        
         # Display the first few rows of the DataFrame
         return [
             html.Div([
@@ -99,7 +76,6 @@ def update_data(n_clicks):
             ])
         ]
     return []
-
 
 if __name__ == '__main__':
     app.run_server(debug=True, use_reloader=False)
