@@ -3,9 +3,8 @@ import pandas as pd
 import dash
 from dash import dcc, html, Input, Output
 import plotly.graph_objects as go
-from googleapiclient.discovery import build
+import requests
 from datetime import datetime, timedelta
-from flask import Flask
 from dotenv import load_dotenv
 import plotly.io as pio
 import time
