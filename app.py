@@ -162,15 +162,17 @@ def create_figure(selected_date,df):
     start_date_filter = pd.to_datetime(start_date)
     end_date_filter = pd.to_datetime(end_date)
 
+    df['tslast'] = pd.to_datetime(df['tslast'], errors='coerce')
+    df['tsactive'] = pd.to_datetime(df['tsactive'], errors='coerce')
     
     mask = (df['tslast'] >= start_date_filter) & (df['tslast'] < end_date_filter)
     filtered_df = df[mask]
 
-    filtered_df['Equipment Group'] = filtered_df['Alarm'].apply(lambda alarm: map_to_equipment_group(alarm, equipment_grouping)).dropna()
+    filtered_df['Equipment Group'] = filtered_df['alarm'].apply(lambda alarm: map_to_equipment_group(alarm, equipment_grouping)).dropna()
 
-    alarm_downtime_totals = filtered_df.groupby(['Equipment Group'])['Time_Difference_minutes'].sum().reset_index()
+    alarm_downtime_totals = filtered_df.groupby(['Equipment Group'])['time_difference_minutes'].sum().reset_index()
 
-    alarm_downtime_totals = alarm_downtime_totals.sort_values('Time_Difference_minutes', ascending=False)
+    alarm_downtime_totals = alarm_downtime_totals.sort_values('time_difference_minutes', ascending=False)
     filtered_df['Equipment Group'] = pd.Categorical(filtered_df['Equipment Group'], categories=alarm_downtime_totals['Equipment Group'], ordered=True)
     filtered_df = filtered_df.sort_values('Equipment Group', ascending=False)
     filtered_df['tslast'] = pd.to_datetime(filtered_df['tslast'])
