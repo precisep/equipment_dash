@@ -223,39 +223,6 @@ def create_figure(selected_date):
     return fig
 
 
-
-
-yesterday = (datetime.now() - timedelta(days=1)).date()
-
-app.layout = html.Div([
-    html.Link(rel='stylesheet', href='/assets/styles.css'),
-    html.H1("Aluecor Equipment Dashboard"),
-    html.Div(id='dashboard-info', children=[
-        "This dashboard presents the alarms data for the plant equipment."
-    ]),
-    html.Div(
-        dcc.DatePickerSingle(
-        id='date-picker',
-        date=yesterday,
-        display_format='YYYY-MM-DD',
-        style={'margin': '20px'}
-    ),
-        style={'textAlign': 'Center', 'margin': '20px 0'}
-    ),
-    dcc.Loading(
-        id="loading-spinner",
-        type="circle",  
-        children=[
-            dcc.Graph(id='alarm-graph')
-        ],
-        fullscreen=True  
-    )
-])
-
-@app.callback(
-    Output('alarm-graph', 'figure'),
-    [Input('date-picker', 'date')]
-)
 def update_graph(selected_date):
     if selected_date is not None:
         fig = create_figure(selected_date)
