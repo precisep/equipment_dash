@@ -65,7 +65,7 @@ app.layout = html.Div(
 def fetch_page(page, start_date, end_date, page_size):
    
     try:
-        filter_query = (f'?fields=["tslast","tsactive","alarm"."time_difference_minutes"]'
+        filter_query = (f'?fields=["tslast","tsactive","alarm","time_difference_minutes"]'
                         f'&filters=[["tsactive",">=","{start_date}"],'
                         f'["tsactive","<=","{end_date}"]]'
                         f'&limit={page_size}&offset={page * page_size}')
