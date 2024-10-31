@@ -106,7 +106,7 @@ def parse_frappe_api(selected_date):
     if df.empty:
         return "No data found for the selected date range."
     
-    return df
+    return df.drop_duplicates()
 
 
 def create_figure(selected_date,df):
@@ -231,7 +231,6 @@ def create_figure(selected_date,df):
 def update_graph(n_clicks, selected_date):
      if n_clicks > 0:
         df_alarms = parse_frappe_api(selected_date)
-        df_alarms = df_alarms.drop_duplicates()  
         if isinstance(df_alarms, str): 
             return html.Div([html.P(df_alarms)])
 
