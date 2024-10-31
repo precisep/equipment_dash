@@ -2,7 +2,7 @@ import os
 import sqlite3
 import pandas as pd
 import dash
-from dash import Dash, dcc, html, Input, Output
+from dash import Dash, dcc, html, Input, Output, State
 from concurrent.futures import ThreadPoolExecutor  
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
