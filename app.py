@@ -109,7 +109,7 @@ def parse_frappe_api(selected_date):
     return df
 
 
-def create_figure(selected_date):
+def create_figure(selected_date,df):
     start_date = f"{selected_date} 07:00:00"
     end_date = f"{selected_date} 17:00:00"
     
@@ -221,13 +221,26 @@ def create_figure(selected_date):
     )
 
     return fig
+    
+@app.callback(
+    Output('output-graph', 'children'),
+    Input('generate-figure-btn', 'n_clicks'),
+    State('date-picker', 'date')
+)
 
+def update_graph(n_clicks, selected_date):
+     if n_clicks > 0:
+        df_alarms = parse_frappe_api(selected_date)
+        df_alarms = df_alarms.drop_duplicates()  
+        if isinstance(df_alarms, str): 
+            return html.Div([html.P(df_alarms)])
 
-def update_graph(selected_date):
-    if selected_date is not None:
-        fig = create_figure(selected_date)
-        return fig
-    return go.Figure()
+        bar_fig = create_figure(selected_date,df_alarms)
+        return [
+            dcc.Graph(figure=bar_fig)  
+        ]
+            
+     return html.Div([html.P("Select a date and press 'Generate Figure'.")])
 
 if __name__ == '__main__':
     app.run_server(debug=True)
