@@ -7,25 +7,30 @@ from concurrent.futures import ThreadPoolExecutor
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-import plotly.io as pio
 import requests
-import time
+import plotly.io as pio
 
+# Set the default Plotly template
 pio.templates.default = "plotly_dark"
 
+# Initialize Dash app
 app = Dash(__name__)
 server = app.server
 load_dotenv()
+
+# Environment variables for API
 api_url = os.getenv('API_URL')
 authorization_token = os.getenv('AUTHORIZATION_TOKEN')
 session = requests.Session()
 
+# Headers for API requests
 headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
     'Authorization': f'token {authorization_token}'
 }
 
+# Layout of the app
 app.layout = html.Div(
     className='app-container',
     children=[
@@ -61,9 +66,8 @@ app.layout = html.Div(
     ]
 )
 
-
+# Function to fetch data from API with pagination
 def fetch_page(page, start_date, end_date, page_size):
-   
     try:
         filter_query = (f'?fields=["tslast","tsactive","alarm","time_difference_minutes"]'
                         f'&filters=[["tsactive",">=","{start_date}"],'
@@ -79,67 +83,56 @@ def fetch_page(page, start_date, end_date, page_size):
         print(f"Error fetching page {page}: {str(e)}")
         return []
 
-
+# Function to parse data from the API for a selected date
 def parse_frappe_api(selected_date):
     start_date = f"{selected_date} 04:00:00"
     end_date = f"{selected_date} 17:00:00"
     
     data = []  
-    page = 0  
     page_size = 200000
-
-    initial_data = fetch_page(page, start_date, end_date, page_size)
+    initial_data = fetch_page(0, start_date, end_date, page_size)
     data.extend(initial_data)
-    
-      
-   
+
     with ThreadPoolExecutor() as executor:
-        results = list(executor.map(lambda p: fetch_page(p, start_date, end_date, page_size), range(page)))
+        results = list(executor.map(lambda p: fetch_page(p, start_date, end_date, page_size), range(1, 10)))  # Adjust range as needed
 
     for page_data in results:
         data.extend(page_data)
-        
-
 
     df = pd.DataFrame(data)
-    print(f'Records for selected date {df.shape}')
+    print(f'Records for selected date: {df.shape[0]}')  # Print number of records found
     if df.empty:
         return "No data found for the selected date range."
 
-    print(df.head)
-    
     return df.drop_duplicates()
 
-
-def create_figure(selected_date,df):
+def create_figure(selected_date, df):
     start_date = f"{selected_date} 07:00:00"
     end_date = f"{selected_date} 17:00:00"
-    
-   
+
+  
     start_date_filter = pd.to_datetime(start_date)
     end_date_filter = pd.to_datetime(end_date)
-
-    
     mask = (df['tsactive'] >= start_date_filter) & (df['tsactive'] < end_date_filter)
     filtered_df = df[mask]
 
     filtered_df['Equipment Group'] = filtered_df['alarm'].apply(lambda alarm: map_to_equipment_group(alarm, equipment_grouping)).dropna()
 
+   
     alarm_downtime_totals = filtered_df.groupby(['Equipment Group'])['time_difference_minutes'].sum().reset_index()
-
     alarm_downtime_totals = alarm_downtime_totals.sort_values('time_difference_minutes', ascending=False)
+
     filtered_df['Equipment Group'] = pd.Categorical(filtered_df['Equipment Group'], categories=alarm_downtime_totals['Equipment Group'], ordered=True)
     filtered_df = filtered_df.sort_values('Equipment Group', ascending=False)
     filtered_df['tslast'] = pd.to_datetime(filtered_df['tslast'])
-    time_range = pd.date_range(start=start_date, end=end_date, freq='h')
-
-    alarm_group = filtered_df['Equipment Group'].unique()
+    time_range = pd.date_range(start=start_date, end=end_date, freq='H')
 
     fig = go.Figure()
 
     bar_width = 0.25
 
-    for equipment_group in alarm_group:
+  
+    for equipment_group in filtered_df['Equipment Group'].unique():
         alarm_data = filtered_df[filtered_df['Equipment Group'] == equipment_group]
         last_time = pd.Timestamp(start_date)
 
@@ -152,7 +145,6 @@ def create_figure(selected_date,df):
                 if (hour - last_time).total_seconds() / 60 > 0:
                     active_time = (hour - last_time).total_seconds() / 60 - downtime_total
                     start_time = active_alarms['tsactive'].iloc[0] if not active_alarms.empty else last_time
-
                     
                     start_time_in_minutes = (start_time - pd.Timestamp(start_time.date())).total_seconds() / 60
                     
@@ -186,7 +178,7 @@ def create_figure(selected_date,df):
                     ))
                 last_time = hour
 
-
+        # Add remaining time if applicable
         if last_time < time_range[-1]:
             remaining_time = (time_range[-1] - last_time).total_seconds() / 60
             fig.add_trace(go.Bar(
@@ -201,17 +193,13 @@ def create_figure(selected_date,df):
                 showlegend=False
             ))
 
-        
-    date_min = filtered_df['tslast'].min().replace(hour=7, minute=0, second=0)
-    date_max = filtered_df['tslast'].max().replace(hour=17, minute=0, second=0)
-
-    
+    # Update figure layout
     fig.update_layout(
         title="Active Alarm and Good State Duration by Alarm and Equipment Group",
-        xaxis_title="Timstamp",
+        xaxis_title="Timestamp (Minutes)",
         yaxis_title="Equipment Group and Alarm",
         barmode='stack',
-        height=2000,
+        height=800,
         xaxis=dict(
             tickmode='array',
             tickvals=[(hour.hour * 60) for hour in time_range],
@@ -223,25 +211,34 @@ def create_figure(selected_date,df):
     )
 
     return fig
-    
+
 @app.callback(
     Output('output-graph', 'children'),
     Input('generate-figure-btn', 'n_clicks'),
     State('date-picker', 'date')
 )
-
 def update_graph(n_clicks, selected_date):
-     if n_clicks > 0:
+    if n_clicks > 0:
         df_alarms = parse_frappe_api(selected_date)
         if isinstance(df_alarms, str): 
             return html.Div([html.P(df_alarms)])
 
-        bar_fig = create_figure(selected_date,df_alarms)
+        bar_fig = create_figure(selected_date, df_alarms)
         return [
-            dcc.Graph(figure=bar_fig)  
+            dcc.Graph(
+                id='bar-graph',
+                figure=bar_fig,
+                config={'displayModeBar': True}
+            )
         ]
-            
-     return html.Div([html.P("Select a date and press 'Generate Figure'.")])
+    return []
+
+
+def minutes_to_hhmm(minutes):
+    hours = int(minutes // 60)
+    minutes = int(minutes % 60)
+    return f"{hours}h {minutes}m"
+
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, use_reloader=False)
