@@ -113,23 +113,27 @@ equipment_grouping = {
         'I09 - TRANSFER - GAS OVEN EXIT ROLLS - MPU',
         'I10 - TRANSFER - BILLET ELEVATOR - MPU'
     ],
-    'Miscellaneous': [
-        '0',
-        'BILLET PLC INTERCOMS DOWN',
+    'Profile Cutter':[
         'I01 - PROFILE CUTTER - SAW - MPU',
-        'I02 - Spare - MPU',
         'I11 - PROFILE CUTTER - MPU - OUTFEED TABLE BELT',
         'I12 - PROFILE CUTTER - MPU - HYDRAULIC MOTOR',
         'I16 - PROFILE CUTTER - MPU - INFEED ROLLER 1',
         'I17 - PROFILE CUTTER - MPU - INFEED ROLLER 2',
+    ],
+    'Container':[
+        'CONTAINER ELEMENT PHASE 1 UNDER CURRENT',
+        'CONTAINER ELEMENT PHASE 2 UNDER CURRENT',
+        'CONTAINER ELEMENT PHASE 3 UNDER CURRENT',
+        'I37 - CONTAINER SEAL PUMP - MPU',
+    ],
+    'Miscellaneous': [
+        '0',
+        'BILLET PLC INTERCOMS DOWN',
+        'I02 - Spare - MPU',
         'I19 - STRETCHER - HYDRAULIC BIG ORANGE MOTOR BIG - MPU',
         'I20 - Spare - MPU',
         'I36 - BLOWER MOTOR - MPU',
-        'I37 - CONTAINER SEAL PUMP - MPU',
         'I79 - ONE OF THE OIL SUPPLY HAND VALVE 1,2,3 ARE NOT FULLY OPEN',
-        'CONTAINER ELEMENT PHASE 1 UNDER CURRENT',
-        'CONTAINER ELEMENT PHASE 2 UNDER CURRENT',
-        'CONTAINER ELEMENT PHASE 3 UNDER CURRENT'
     ]}
 
 
